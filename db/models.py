@@ -1,3 +1,6 @@
+from django.conf import settings
+from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -21,6 +24,11 @@ class Movie(models.Model):
     description = models.TextField()
     actors = models.ManyToManyField(to=Actor, related_name="movies")
     genres = models.ManyToManyField(to=Genre, related_name="movies")
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["title"])
+        ]
 
     def __str__(self) -> str:
         return self.title
@@ -50,3 +58,73 @@ class MovieSession(models.Model):
 
     def __str__(self) -> str:
         return f"{self.movie.title} {str(self.show_time)}"
+
+
+class Order(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:
+        return f"Order: {self.created_at}"
+
+
+class Ticket(models.Model):
+    movie_session = models.ForeignKey("MovieSession", on_delete=models.CASCADE)
+    order = models.ForeignKey("Order", on_delete=models.CASCADE)
+    row = models.IntegerField()
+    seat = models.IntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("movie_session", "row", "seat"),
+                name="unique_seat_per_session",
+            )
+        ]
+
+    def clean(self) -> None:
+        if self.movie_session:
+            cinema_hall = self.movie_session.cinema_hall
+            if self.row <= 0 or self.row > cinema_hall.rows:
+                raise ValidationError(
+                    {
+                        "row":
+                            [
+                                f"row number must be"
+                                f"in available range:"
+                                f"(1, rows):"
+                                f"(1, {cinema_hall.rows})"
+                            ]
+                    }
+                )
+            if self.seat <= 0 or self.seat > cinema_hall.seats_in_row:
+                raise ValidationError(
+                    {
+                        "seat":
+                            [
+                                f"seat number must be"
+                                f"in available range:"
+                                f"(1, seat_in_row):"
+                                f"(1, {cinema_hall.seats_in_row})"
+                            ]
+                    }
+                )
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return (f"Ticket: {self.movie_session.show_time.strftime('%Y-%m-%d')}"
+                f"{self.movie_session.show_time.strftime('%H:%M:%S')}"
+                f"(row: {str(self.row)}, seat: {str(self.seat)})")
+
+
+class User(AbstractUser):
+    pass
