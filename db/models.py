@@ -71,7 +71,7 @@ class Order(models.Model):
         ordering = ("-created_at",)
 
     def __str__(self) -> str:
-        return f"Order: {self.created_at}"
+        return f"{self.created_at}"
 
 
 class Ticket(models.Model):
@@ -96,9 +96,9 @@ class Ticket(models.Model):
                     {
                         "row":
                             [
-                                f"row number must be"
-                                f"in available range:"
-                                f"(1, rows):"
+                                f"row number must be "
+                                f"in available range: "
+                                f"(1, rows): "
                                 f"(1, {cinema_hall.rows})"
                             ]
                     }
@@ -108,9 +108,9 @@ class Ticket(models.Model):
                     {
                         "seat":
                             [
-                                f"seat number must be"
-                                f"in available range:"
-                                f"(1, seat_in_row):"
+                                f"seat number must be "
+                                f"in available range: "
+                                f"(1, seats_in_row): "
                                 f"(1, {cinema_hall.seats_in_row})"
                             ]
                     }
@@ -121,8 +121,9 @@ class Ticket(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        return (f"Ticket: {self.movie_session.show_time.strftime('%Y-%m-%d')}"
-                f"{self.movie_session.show_time.strftime('%H:%M:%S')}"
+        return (f"{self.movie_session.movie.title} "
+                f"{self.movie_session.show_time.strftime('%Y-%m-%d')} "
+                f"{self.movie_session.show_time.strftime('%H:%M:%S')} "
                 f"(row: {str(self.row)}, seat: {str(self.seat)})")
 
 

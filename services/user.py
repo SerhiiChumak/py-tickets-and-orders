@@ -26,6 +26,7 @@ def create_user(
         password=password,
     )
     extra_fields(
+        user,
         email=email,
         first_name=first_name,
         last_name=last_name
